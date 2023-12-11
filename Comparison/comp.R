@@ -29,32 +29,42 @@ no_in_char <- tree$tip.label[!tree$tip.label%in%rownames(characters)]
 
 tree2 <- drop.tip(tree,no_in_char)
 
-# Ejemplo caracteres 9 y 10
-
 ## Graficar
 
-object <- plotTree.datamatrix(tree2,characters[,c(2,3)],fsize=0.5,yexp=1,
+# Se cambian los valores de estos dos objetos para comparar distintos caracteres
+
+c_1 <- 7
+
+c_2 <- 8
+
+object <- plotTree.datamatrix(tree2,characters[,c(c_1,c_2)],fsize=0.5,yexp=1,
                               header=FALSE,xexp=1.45,palettes=c ("YlOrRd", "PuBuGn"))
 
-leg<-legend(x="topright",names(object$colors$X2),
-  cex=0.7,pch=22,pt.bg=object$colors$X2,
-  pt.cex=1.5,bty="n",title="Deciduous")
+# Cambiando la descripción de lo q es el caracter
 
-leg<-legend(x="right",names(object$colors$X3),
-            cex=0.7,pch=22,pt.bg=object$colors$X3,
-            pt.cex=1.5,bty="n",title="Shape")
+leg<-legend(x="topright",legend=names(object$colors[[1]]),
+  cex=0.7,pch=22,pt.bg=object$colors[[1]],
+  pt.cex=1.5,bty="n",title="Entero")
+
+leg<-legend(x="right",names(object$colors[[2]]),
+            cex=0.7,pch=22,pt.bg=object$colors[[2]],
+            pt.cex=1.5,bty="n",title="Tricomas")
 
 # Modelo de correlación
 
-char_1 <- characters[,2]
+species  <- c()
 
-names(char_1) <- rownames(characters)
+tree_mod <- drop.tip(tree2,species)
 
-char_2 <- characters[,3]
+char_1 <- factor(characters[!rownames(characters)%in%species,c_1],levels = c(0,1))
 
-names(char_2) <- rownames(characters)
+names(char_1) <- rownames(characters[!rownames(characters)%in%species,])
 
-cor_fit <- fitPagel(tree2,char_1,char_2)
+char_2 <- factor(characters[!rownames(characters)%in%species,c_2],levels = c(0,1))
+
+names(char_2) <- names(char_1)
+
+cor_fit <- fitPagel(tree_mod,char_1,char_2)
 
 plot(cor_fit,signif=4,cex.main=1,
       cex.sub=0.8,cex.traits=0.7,cex.rates=0.7,
@@ -62,9 +72,15 @@ plot(cor_fit,signif=4,cex.main=1,
 
 # With MCMC
 
-ngen <- 4e6
+ngen <- 2e6
 
-mcmc_fern <- threshBayes(tree2,characters[tree2$tip.label,c(2,3)],type=c ("disc", "disc"),
+mat <- characters[tree_mod$tip.label,c(c_1,c_2)]
+
+mat[,1] <- factor(mat[,1],levels=c(1,0))
+
+mat[,2] <- factor(mat[,2],levels=c(1,0))
+
+mcmc_fern <- threshBayes(tree_mod,mat,type=c ("disc", "disc"),
                          ngen=ngen, plot=FALSE,
                          control=list (print.interval=ngen/10))
 
@@ -78,7 +94,7 @@ r.mcmc <- tail(mcmc_fern$par$r,0.8*nrow(mcmc_fern$par))
 
 class(r.mcmc) <- "mcmc"
 
-HPDinterval(r.mcmc)
+HPDinterval(r.mcmc,prob = 0.9)
 
 
 
